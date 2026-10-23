@@ -15,12 +15,20 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Setup Theos
-      uses: Randomblock1/theos-action@v1
-      with:
-        theos-dir: 'theos'
-        theos-src: 'https://github.com/theos/theos'
-        theos-sdks: 'https://github.com/theos/sdks'
+    - name: Install Theos & SDKs
+      env:
+        THEOS: ${{ github.workspace }}/theos
+      run: |
+        # Cài đặt Theos trực tiếp (không dùng action bên thứ 3 để tránh lỗi)
+        bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+        
+        # Tải SDK iOS mới nhất
+        mkdir -p "$THEOS/sdks"
+        cd "$THEOS/sdks"
+        curl -L -o master.zip https://github.com/theos/sdks/archive/refs/heads/master.zip
+        unzip -q d master.zip
+        mv sdks-master/* .
+        rm -rf sdks-master master.zip
 
     - name: Clean and Build
       env:
@@ -32,7 +40,7 @@ jobs:
         # Xóa ký tự xuống dòng (CRLF) nếu có
         find . -name "control" -exec perl -pi -e 's/\r//g' {} \; || true
         
-        # Build dự án
+        # Buildự án
         make clean
         make
 
